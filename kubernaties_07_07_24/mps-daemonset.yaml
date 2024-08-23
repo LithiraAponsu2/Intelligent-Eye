@@ -1,0 +1,36 @@
+apiVersion: apps/v1
+kind: DaemonSet
+metadata:
+  name: nvidia-mps-daemonset
+spec:
+  selector:
+    matchLabels:
+      name: nvidia-mps-daemon
+  template:
+    metadata:
+      labels:
+        name: nvidia-mps-daemon
+    spec:
+      containers:
+      - name: nvidia-mps-daemon
+        image: nvcr.io/nvidia/k8s-device-plugin
+        command: ["/bin/bash", "/etc/config/mps.sh"]
+        securityContext:
+          privileged: true
+        volumeMounts:
+        - name: config-volume
+          mountPath: /etc/config
+        - name: dev
+          mountPath: /dev
+        - name: nvidia
+          mountPath: /usr/local/nvidia
+      volumes:
+      - name: config-volume
+        configMap:
+          name: mps-config
+      - name: dev
+        hostPath:
+          path: /dev
+      - name: nvidia
+        hostPath:
+          path: /usr/local/nvidia

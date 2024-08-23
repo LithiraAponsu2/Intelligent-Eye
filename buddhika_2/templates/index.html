@@ -1,0 +1,243 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Video Stream with Thumbnails</title>
+  <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css">
+  <style>
+    body {
+      height: 100vh;
+      margin: 0;
+      font-family: Arial, sans-serif;
+      background-color: #121212;
+      color: #FFFFFF;
+    }
+    .main-title {
+            text-align: center;
+            padding: 20px 0;
+            background-color: #8d8c8c; /* Example background color */
+        }
+
+    .container {
+      padding: 20px;
+      box-sizing: border-box;
+    }
+
+    .tab-content {
+      background-color: #1E1E1E;
+      border-radius: 10px;
+      padding: 20px;
+    }
+
+    .video-container {
+      position: relative;
+      width: 100%;
+      height: 0;
+      padding-bottom: 56.25%;
+    }
+
+    .video-container img {
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      object-fit: contain;
+    }
+
+    .thumbnail-container {
+      display: flex;
+      flex-wrap: wrap;
+      justify-content: center;
+      align-items: flex-start;
+      width: 100%;
+      padding: 10px;
+    }
+
+    .thumbnail {
+      margin: 5px;
+      width: calc(33% - 10px);
+      box-sizing: border-box;
+      border-radius: 10px;
+      overflow: hidden;
+      position: relative;
+    }
+
+    .thumbnail img {
+      width: 100%;
+      height: auto;
+      display: block;
+      border-radius: 10px;
+    }
+
+    .thumbnail input[type="checkbox"] {
+      position: absolute;
+      top: 10px;
+      left: 10px;
+      transform: scale(1.5);
+    }
+
+    h1 {
+      text-align: center;
+      font-size: 36px;
+      margin-bottom: 20px;
+      color: #FFFFFF;
+    }
+
+    .button-container {
+      display: flex;
+      justify-content: center;
+      margin-top: 20px;
+    }
+
+    .save-button {
+      padding: 15px 30px;
+      font-size: 24px;
+      background-color: #007BFF;
+      border: none;
+      border-radius: 5px;
+      color: #FFFFFF;
+      cursor: pointer;
+    }
+
+    .save-button:hover {
+      background-color: #0056b3;
+    }
+  </style>
+</head>
+
+<body>
+  <div class="main-title">
+    <h1>Traffic Violation Detection System</h1>
+    <div class="btn-group" role="group" aria-label="Dashboard buttons">
+        <a href="{{ url_for('index') }}" class="btn btn-primary">Tab 1</a>
+        <a href="{{ url_for('tab_2') }}" class="btn btn-success">Tab 2</a>
+    </div>
+</div>
+  <div class="container">
+    <ul class="nav nav-tabs" id="myTab" role="tablist">
+      <li class="nav-item">
+        <a class="nav-link active" id="video-tab" data-toggle="tab" href="#video" role="tab" aria-controls="video" aria-selected="true">Video Stream</a>
+      </li>
+      <li class="nav-item">
+        <a class="nav-link" id="thumbnails-tab" data-toggle="tab" href="#thumbnails" role="tab" aria-controls="thumbnails" aria-selected="false">Saved Frames</a>
+      </li>
+    </ul>
+    <div class="tab-content">
+      <div class="tab-pane fade show active" id="video" role="tabpanel" aria-labelledby="video-tab">
+        <div class="video-container">
+          <img id="videoElement" src="/video_feed" alt="Video Stream" />
+          <div class="button-container">
+            <button class="save-button" onclick="captureFrame()">Capture Frame</button>
+          </div>
+        </div>
+      </div>
+      <div class="tab-pane fade" id="thumbnails" role="tabpanel" aria-labelledby="thumbnails-tab">
+        <h1>Saved Frames</h1>
+        <div class="thumbnail-container" id="thumbnailContainer">
+          <!-- Thumbnails will be loaded here -->
+        </div>
+        <div class="button-container">
+          <button class="save-button" onclick="saveSelectedFrames()">Save Selected Frames</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script src="https://code.jquery.com/jquery-3.5.1.slim.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/@popperjs/core@2.9.2/dist/umd/popper.min.js"></script>
+  <script src="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/js/bootstrap.min.js"></script>
+  <script>
+    function startVideoStream() {
+      const videoElement = document.getElementById('videoElement');
+      videoElement.src = '/video_feed';
+    }
+
+    function loadThumbnails() {
+      fetch('/image_filenames')
+        .then(response => response.json())
+        .then(imagePaths => {
+          const thumbnailsDiv = document.getElementById('thumbnailContainer');
+          thumbnailsDiv.innerHTML = '';
+
+          imagePaths.forEach(imagePath => {
+            const div = document.createElement('div');
+            div.classList.add('thumbnail');
+
+            const img = document.createElement('img');
+            img.src = `/images/${imagePath}`;
+            img.alt = `Thumbnail ${imagePath}`;
+
+            const checkbox = document.createElement('input');
+            checkbox.type = 'checkbox';
+            checkbox.value = imagePath;
+
+            div.appendChild(img);
+            div.appendChild(checkbox);
+            thumbnailsDiv.appendChild(div);
+          });
+        });
+    }
+
+    function captureFrame() {
+      const videoElement = document.getElementById('videoElement');
+      const canvas = document.createElement('canvas');
+      canvas.width = videoElement.width;
+      canvas.height = videoElement.height;
+      const context = canvas.getContext('2d');
+      context.drawImage(videoElement, 0, 0, canvas.width, canvas.height);
+      canvas.toBlob(blob => {
+        const formData = new FormData();
+        formData.append('frame', blob, 'frame.jpg');
+
+        fetch('/capture_frame', {
+          method: 'POST',
+          body: formData
+        })
+          .then(response => response.json())
+          .then(data => {
+            alert(data.message);
+            loadThumbnails();
+          })
+          .catch(error => console.error('Error:', error));
+      });
+    }
+
+    function saveSelectedFrames() {
+      const selectedImages = [];
+      document.querySelectorAll('.thumbnail input[type="checkbox"]:checked').forEach(checkbox => {
+        selectedImages.push(checkbox.value);
+      });
+
+      if (selectedImages.length === 0) {
+        alert('No frames selected!');
+        return;
+      }
+
+      fetch('/save_selected_frames', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ images: selectedImages }),
+      })
+        .then(response => response.json())
+        .then(data => {
+          alert(data.message);
+          loadThumbnails();
+        })
+        .catch(error => console.error('Error:', error));
+    }
+
+    document.addEventListener('DOMContentLoaded', () => {
+      loadThumbnails();
+      startVideoStream();
+    });
+
+    setInterval(loadThumbnails, 10000);
+  </script>
+</body>
+
+</html>

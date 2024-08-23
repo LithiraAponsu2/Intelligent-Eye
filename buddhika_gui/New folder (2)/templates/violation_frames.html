@@ -1,0 +1,7 @@
+{% for image in images %}
+<div class="frame">
+    <img src="{{ url_for('static', filename='xgb_capt_2/' ~ image) }}" alt="Violation Frame">
+</div>
+{% endfor %}
+
+

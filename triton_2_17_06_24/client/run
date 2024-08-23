@@ -1,0 +1,3 @@
+docker run --gpus all -p8000:8000 -p8001:8001 -p8002:8002 --rm -it \
+    -v /path/on/host:/saved_frames \
+    your-image-name

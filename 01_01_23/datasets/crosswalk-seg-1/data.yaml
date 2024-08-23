@@ -1,0 +1,12 @@
+names:
+- crosswalk
+nc: 1
+roboflow:
+  license: CC BY 4.0
+  project: crosswalk-seg
+  url: https://universe.roboflow.com/tcc-xn3st/crosswalk-seg/dataset/1
+  version: 1
+  workspace: tcc-xn3st
+test: ../test/images
+train: crosswalk-seg-1/train/images
+val: crosswalk-seg-1/valid/images

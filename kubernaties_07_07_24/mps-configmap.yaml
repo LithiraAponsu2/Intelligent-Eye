@@ -1,0 +1,10 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: mps-config
+data:
+  mps.sh: |
+    #!/bin/bash
+    nvidia-smi
+    echo "GPU is accessible"
+    sleep infinity

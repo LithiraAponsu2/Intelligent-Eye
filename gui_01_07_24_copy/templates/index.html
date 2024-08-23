@@ -1,0 +1,290 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Video Stream with Thumbnails</title>
+  <style>
+    body {
+      display: flex;
+      height: 100vh;
+      margin: 0;
+      font-family: Arial, sans-serif;
+      background-color: #121212;
+      color: #FFFFFF;
+    }
+
+    .container {
+      display: flex;
+      flex: 1;
+      padding: 20px;
+      box-sizing: border-box;
+    }
+
+    .video-feed {
+      flex: 2;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      background-color: #1E1E1E;
+      border-radius: 10px;
+      overflow: hidden;
+      margin-right: 20px;
+      padding: 10px;
+    }
+
+    .video-container {
+      position: relative;
+      width: 100%;
+      height: 0;
+      padding-bottom: 56.25%;
+      /* 16:9 Aspect Ratio */
+    }
+
+    .video-container img {
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      object-fit: contain;
+    }
+
+    .thumbnails {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      padding: 10px;
+      overflow-y: auto;
+      background-color: #1E1E1E;
+      border-radius: 10px;
+    }
+
+    .thumbnail-container {
+      display: flex;
+      flex-wrap: wrap;
+      justify-content: center;
+      align-items: flex-start;
+      width: 100%;
+      padding: 10px;
+    }
+
+    .thumbnail {
+      margin: 5px;
+      width: calc(33% - 10px);
+      box-sizing: border-box;
+      border-radius: 10px;
+      overflow: hidden;
+      position: relative;
+      cursor: pointer;
+    }
+
+    .thumbnail img {
+      width: 100%;
+      height: auto;
+      display: block;
+      border-radius: 10px;
+    }
+
+    .thumbnail input[type="checkbox"] {
+      position: absolute;
+      top: 10px;
+      left: 10px;
+      transform: scale(1.5);
+      /* Scale checkbox to 1.5 times its original size */
+    }
+
+    h1 {
+      text-align: center;
+      width: 100%;
+      font-size: 36px;
+      /* Adjust font size to 3 times its original size */
+      margin-bottom: 20px;
+      color: #FFFFFF;
+    }
+
+    .button-container {
+      display: flex;
+      justify-content: center;
+      margin-top: 20px;
+    }
+
+    .save-button {
+      padding: 15px 30px;
+      /* Adjust padding to make the button larger */
+      font-size: 24px;
+      /* Adjust font size to make the button text larger */
+      background-color: #007BFF;
+      border: none;
+      border-radius: 5px;
+      color: #FFFFFF;
+      cursor: pointer;
+    }
+
+    .save-button:hover {
+      background-color: #0056b3;
+    }
+
+    /* Popup Styles */
+    #imagePopup {
+      display: none;
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background-color: rgba(0, 0, 0, 0.8);
+      justify-content: center;
+      align-items: center;
+    }
+
+    #imagePopup img {
+      max-width: 90%;
+      max-height: 90%;
+      border-radius: 10px;
+    }
+  </style>
+</head>
+
+<body>
+  <div class="container">
+    <div class="video-feed">
+      <h1>Video Stream</h1>
+      <div class="video-container">
+        <img id="videoElement" src="/video_feed" alt="Video Stream" />
+        <button class="save-button" onclick="captureFrame()">Capture Frame</button>
+      </div>
+    </div>
+    <div class="thumbnails">
+      <h1>Saved Frames</h1>
+      <div class="thumbnail-container" id="thumbnails">
+        <!-- Thumbnails will be loaded here -->
+      </div>
+      <div class="button-container">
+        <button class="save-button" onclick="saveSelectedFrames()">Save Selected Frames</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Image Popup -->
+  <div id="imagePopup">
+    <img src="" alt="Enlarged Image" />
+  </div>
+
+  <script>
+    function startVideoStream() {
+      const videoElement = document.getElementById('videoElement');
+      videoElement.src = '/video_feed'; // Ensure the video element starts streaming
+    }
+
+    function loadThumbnails() {
+      fetch('/image_filenames')
+        .then(response => response.json())
+        .then(imagePaths => {
+          const thumbnailsDiv = document.getElementById('thumbnails');
+          thumbnailsDiv.innerHTML = '';  // Clear previous thumbnails
+
+          imagePaths.forEach(imagePath => {
+            const div = document.createElement('div');
+            div.classList.add('thumbnail');
+
+            const img = document.createElement('img');
+            img.src = `/images/${imagePath}`;
+            img.alt = `Thumbnail ${imagePath}`;
+
+            const checkbox = document.createElement('input');
+            checkbox.type = 'checkbox';
+            checkbox.value = imagePath;
+
+            div.appendChild(img);
+            div.appendChild(checkbox);
+            thumbnailsDiv.appendChild(div);
+
+            // Add click event to open popup
+            img.addEventListener('click', () => {
+              showImagePopup(`/images/${imagePath}`);
+            });
+          });
+        });
+    }
+
+    function captureFrame() {
+      const videoElement = document.getElementById('videoElement');
+      const canvas = document.createElement('canvas');
+      canvas.width = videoElement.width;
+      canvas.height = videoElement.height;
+      const context = canvas.getContext('2d');
+      context.drawImage(videoElement, 0, 0, canvas.width, canvas.height);
+      canvas.toBlob(blob => {
+        const formData = new FormData();
+        formData.append('frame', blob, 'frame.jpg');
+
+        fetch('/capture_frame', {
+          method: 'POST',
+          body: formData
+        })
+          .then(response => response.json())
+          .then(data => {
+            alert(data.message);
+            loadThumbnails();  // Reload thumbnails to reflect new captures
+          })
+          .catch(error => console.error('Error:', error));
+      });
+    }
+
+    function saveSelectedFrames() {
+      const selectedImages = [];
+      document.querySelectorAll('.thumbnail input[type="checkbox"]:checked').forEach(checkbox => {
+        selectedImages.push(checkbox.value);
+      });
+
+      if (selectedImages.length === 0) {
+        alert('No frames selected!');
+        return;
+      }
+
+      fetch('/save_selected_frames', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ images: selectedImages }),
+      })
+        .then(response => response.json())
+        .then(data => {
+          alert(data.message);
+          loadThumbnails();  // Reload thumbnails to reflect any changes
+        })
+        .catch(error => console.error('Error:', error));
+    }
+
+    function showImagePopup(src) {
+      const imagePopup = document.getElementById('imagePopup');
+      const popupImage = imagePopup.querySelector('img');
+      popupImage.src = src;
+      imagePopup.style.display = 'flex';
+    }
+
+    function hideImagePopup() {
+      const imagePopup = document.getElementById('imagePopup');
+      imagePopup.style.display = 'none';
+    }
+
+    // Load thumbnails on page load
+    document.addEventListener('DOMContentLoaded', () => {
+      loadThumbnails();
+      startVideoStream();
+
+      // Close popup when clicking outside of the image
+      const imagePopup = document.getElementById('imagePopup');
+      imagePopup.addEventListener('click', hideImagePopup);
+    });
+
+    // Refresh thumbnails every 10 seconds
+    setInterval(loadThumbnails, 10000);
+  </script>
+</body>
+
+</html>

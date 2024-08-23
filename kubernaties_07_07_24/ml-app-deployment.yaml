@@ -1,0 +1,65 @@
+# apiVersion: apps/v1 # API version of Kubernetes resource
+# kind: Deployment # Type of resource
+# metadata:
+#   name: ml-app # Name of the Deployment
+# spec:
+#   replicas: 1 # Number of replicas (pods) to run (edit as needed) ###
+#   selector:
+#     matchLabels:
+#       app: ml-app # Selector to match the pods managed by this Deployment
+#   template:
+#     metadata:
+#       labels:
+#         app: ml-app # Labels for the pods
+#     spec:
+#       containers:
+#       - name: ml-app-container
+#         image: http_video_5000
+#         imagePullPolicy: Never # Docker image to use for this container (replace with your image name)
+#         ports:
+#         - containerPort: 5000 # Port on which the container listens
+#         volumeMounts:
+#         - mountPath: /app/xgb_capt_3 # Path inside the container where the volume is mounted
+#           name: storage # Name of the volume to mount
+#         resources:
+#           limits:
+#             nvidia.com/gpu: 1 # Limit to request one GPU
+#             # requests:
+#             #   nvidia.com/gpu: 1 # Request one GPU
+#       volumes:
+#       - name: storage # Name of the volume
+#         persistentVolumeClaim:
+#           claimName: ml-app-pvc # Name of the PVC to bind to this volume
+
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: ml-app
+spec:
+  replicas: 2
+  selector:
+    matchLabels:
+      app: ml-app
+  template:
+    metadata:
+      labels:
+        app: ml-app
+    spec:
+      containers:
+      - name: ml-app-container
+        image: http_video_5000 # Replace with your actual image name
+        resources:
+          limits:
+            nvidia.com/gpu: 1 # Request 1 GPU
+        volumeMounts:
+        - name: storage
+          mountPath: /app/xgb_capt_3
+      volumes:
+      - name: storage
+        persistentVolumeClaim:
+          claimName: ml-app-pvc
+
+
+
+
+

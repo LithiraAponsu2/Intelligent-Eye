@@ -1,0 +1,67 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+    <link rel="stylesheet"
+        href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.3.1/styles/atom-one-dark.min.css">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.3.1/highlight.min.js"></script>
+    <script>hljs.highlightAll();</script>
+    <style>
+        body {
+            background-color: #222;
+            color: #fff;
+            font-family: 'Courier New', monospace;
+            padding: 20px;
+            position: relative;
+        }
+
+        pre {
+            background-color: #333;
+            padding: 20px;
+            border-radius: 5px;
+            overflow-x: auto;
+            margin-bottom: 20px;
+        }
+
+        .download-btn {
+            background-color: #4CAF50;
+            border: none;
+            color: white;
+            padding: 10px 20px;
+            text-align: center;
+            text-decoration: none;
+            display: inline-block;
+            font-size: 16px;
+            border-radius: 5px;
+            position: absolute;
+            top: 20px;
+            right: 20px;
+            cursor: pointer;
+        }
+    </style>
+    <script>
+        function downloadPythonCode() {
+            const pythonCode = document.querySelector('code.python').innerText;
+            const element = document.createElement('a');
+            const file = new Blob([pythonCode], { type: 'text/plain' });
+            element.href = URL.createObjectURL(file);
+            element.download = 'python_code.py';
+            document.body.appendChild(element);
+            element.click();
+            document.body.removeChild(element);
+        }
+    </script>
+</head>
+
+<body>
+    <a href="#" onclick="downloadPythonCode()" class="download-btn">Download Python Code</a>
+
+    <pre><code class="python">
+        <!-- Your Python code goes here -->
+
+        
+
+    </code></pre>
+</body>
+
+</html>
